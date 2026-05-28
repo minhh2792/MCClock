@@ -1,0 +1,26 @@
+# https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+timezone: "Asia/Ho_Chi_Minh"
+
+# Clock face image file (placed in plugins/MCClock/ folder)
+clock-face: "clock_face.png"
+
+item:
+  name: "&bClock"
+  lore:
+    - "&7An analog clock."
+
+hands:
+  # Thickness of the clock hands
+  # Recommended values: 1-2
+  thickness: 1
+
+  # smooth: second hand moves continuously between ticks
+  # tick: second hand jumps once per second
+  mode: smooth
+
+  # Compensation in milliseconds for network latency (try 500-1000 if clock appears behind)
+  # Example: 1000 = 1 second
+  latency-compensation-ms: 0
+
+# DON'T CHANGE THIS
+map-id: -1
