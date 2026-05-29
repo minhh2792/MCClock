@@ -8,7 +8,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 public class InvisibleFrameListener implements Listener {
 
@@ -25,18 +24,16 @@ public class InvisibleFrameListener implements Listener {
         ItemStack item = event.getItemStack();
         if (item == null) return;
 
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-
         if (plugin.isInvisibleFrameItem(item)) {
             frame.setVisible(false);
+            plugin.markOwnedFrame(frame);
         }
     }
 
     @EventHandler
     public void onHangingBreak(HangingBreakEvent event) {
         if (!(event.getEntity() instanceof ItemFrame frame)) return;
-        if (frame.isVisible()) return;
+        if (!plugin.isOwnedFrame(frame)) return;
 
         event.setCancelled(true);
 

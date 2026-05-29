@@ -152,6 +152,7 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
         frame.setVisible(false);
         frame.setFixed(false);
         frame.setItem(mapItem);
+        plugin.markOwnedFrame(frame);
 
         sender.sendMessage(ChatColor.GREEN + "Clock placed! (Map ID: " + view.getId() + ")");
     }
@@ -193,10 +194,17 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
                     .collect(Collectors.toList());
         }
 
+        List<String> amounts = Arrays.asList("1", "2", "4", "8", "16", "32", "64");
+
         if (args.length == 2) {
             String sub = args[0].toLowerCase();
-            if (sub.equals("get") || sub.equals("getframe")) {
-                return Arrays.asList("1", "2", "4", "8", "16", "32", "64").stream()
+            if (sub.equals("get")) {
+                return amounts.stream()
+                        .filter(s -> s.startsWith(args[1]))
+                        .collect(Collectors.toList());
+            }
+            if (sub.equals("getframe")) {
+                return amounts.stream()
                         .filter(s -> s.startsWith(args[1]))
                         .collect(Collectors.toList());
             }

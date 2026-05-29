@@ -4,12 +4,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemFrame;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.map.MapView;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Arrays;
 
@@ -25,6 +30,7 @@ public final class MCClock extends JavaPlugin {
 
     private ClockRenderer clockRenderer;
     private int mapId = -1;
+    private BukkitTask tickTask;
 
     @Override
     public void onEnable() {
@@ -62,10 +68,13 @@ public final class MCClock extends JavaPlugin {
         mcclockCmd.setTabCompleter(clockCommand);
 
         getServer().getPluginManager().registerEvents(new InvisibleFrameListener(this), this);
+
+        startTickTask();
     }
 
     @Override
     public void onDisable() {
+        stopTickTask();
     }
 
     public boolean reloadPlugin() {
@@ -91,7 +100,53 @@ public final class MCClock extends JavaPlugin {
             }
         }
 
+        stopTickTask();
+        startTickTask();
+
         return true;
+    }
+
+    private void startTickTask() {
+        if (!getConfig().getBoolean("tick-sound.enabled", true)) return;
+
+        double radius = getConfig().getDouble("tick-sound.radius", 5.0);
+        float volume = (float) getConfig().getDouble("tick-sound.volume", 0.3);
+        float pitch = (float) getConfig().getDouble("tick-sound.pitch", 2.0);
+        String soundName = getConfig().getString("tick-sound.sound", "BLOCK_NOTE_BLOCK_HAT");
+
+        Sound sound;
+        try {
+            sound = Sound.valueOf(soundName);
+        } catch (IllegalArgumentException e) {
+            getLogger().warning("Invalid tick-sound.sound '" + soundName + "', using default.");
+            sound = Sound.BLOCK_NOTE_BLOCK_HAT;
+        }
+
+        final Sound finalSound = sound;
+        final double radiusSq = radius * radius;
+
+        tickTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            for (World world : Bukkit.getWorlds()) {
+                for (Entity entity : world.getEntities()) {
+                    if (!(entity instanceof ItemFrame frame)) continue;
+                    if (frame.isVisible()) continue;
+                    if (frame.getItem().getType() != Material.FILLED_MAP) continue;
+
+                    for (Player player : world.getPlayers()) {
+                        if (player.getLocation().distanceSquared(frame.getLocation()) <= radiusSq) {
+                            player.playSound(frame.getLocation(), finalSound, volume, pitch);
+                        }
+                    }
+                }
+            }
+        }, 20L, 20L);
+    }
+
+    private void stopTickTask() {
+        if (tickTask != null && !tickTask.isCancelled()) {
+            tickTask.cancel();
+            tickTask = null;
+        }
     }
 
     public MapView getOrCreateMapView() {
@@ -137,6 +192,19 @@ public final class MCClock extends JavaPlugin {
         if (meta == null) return false;
         return meta.getPersistentDataContainer()
                 .has(new NamespacedKey(this, "invisible_frame"), PersistentDataType.BYTE);
+    }
+
+    public void markOwnedFrame(ItemFrame frame) {
+        frame.getPersistentDataContainer().set(
+                new NamespacedKey(this, "owned_frame"),
+                PersistentDataType.BYTE,
+                (byte) 1
+        );
+    }
+
+    public boolean isOwnedFrame(ItemFrame frame) {
+        return frame.getPersistentDataContainer()
+                .has(new NamespacedKey(this, "owned_frame"), PersistentDataType.BYTE);
     }
 
     private void attachRenderer(MapView view) {

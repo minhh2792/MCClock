@@ -2,7 +2,7 @@
 timezone: "Asia/Ho_Chi_Minh"
 
 # Clock face image file (placed in plugins/MCClock/ folder)
-clock-face: "clock_face.png"
+clock-face: "clock_face_1.png"
 
 item:
   name: "&bClock"
@@ -21,6 +21,18 @@ hands:
   # Compensation in milliseconds for network latency (try 500-1000 if clock appears behind)
   # Example: 1000 = 1 second
   latency-compensation-ms: 0
+
+tick-sound:
+  # Play a tick sound near invisible item frames that contain the clock map
+  enabled: true
+  # Radius in blocks to hear the sound
+  radius: 5.0
+  # Volume (0.0 - 1.0)
+  volume: 0.3
+  # Pitch
+  pitch: 2.0
+  # Sound name — see https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Sound.html
+  sound: "BLOCK_NOTE_BLOCK_HAT"
 
 # DON'T CHANGE THIS
 map-id: -1
