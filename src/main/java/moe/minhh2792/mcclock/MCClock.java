@@ -1,9 +1,17 @@
 package moe.minhh2792.mcclock;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.map.MapView;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -49,7 +57,11 @@ public final class MCClock extends JavaPlugin {
 
         var mcclockCmd = getCommand("mcclock");
         assert mcclockCmd != null;
-        mcclockCmd.setExecutor(new ClockCommand(this));
+        ClockCommand clockCommand = new ClockCommand(this);
+        mcclockCmd.setExecutor(clockCommand);
+        mcclockCmd.setTabCompleter(clockCommand);
+
+        getServer().getPluginManager().registerEvents(new InvisibleFrameListener(this), this);
     }
 
     @Override
@@ -99,6 +111,32 @@ public final class MCClock extends JavaPlugin {
         getConfig().set("map-id", mapId);
         saveConfig();
         return view;
+    }
+
+    public ItemStack createInvisibleFrameItem(int amount) {
+        ItemStack item = new ItemStack(Material.GLOW_ITEM_FRAME, amount);
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+        meta.setDisplayName(ChatColor.AQUA + "Invisible Item Frame");
+        meta.setLore(Arrays.asList(
+                ChatColor.GRAY + "Place on a wall to create",
+                ChatColor.GRAY + "an invisible item frame."
+        ));
+        meta.getPersistentDataContainer().set(
+                new NamespacedKey(this, "invisible_frame"),
+                PersistentDataType.BYTE,
+                (byte) 1
+        );
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    public boolean isInvisibleFrameItem(ItemStack item) {
+        if (item == null) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        return meta.getPersistentDataContainer()
+                .has(new NamespacedKey(this, "invisible_frame"), PersistentDataType.BYTE);
     }
 
     private void attachRenderer(MapView view) {

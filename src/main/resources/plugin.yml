@@ -7,9 +7,9 @@ authors: [ minhh2792 ]
 
 commands:
   mcclock:
-    description: Get the clock map item
+    description: MCClock commands
     aliases: [ mcc ]
-    usage: /mcclock get [amount]
+    usage: /mcclock <get|getframe|place|reload>
     permission: mcclock.admin
 
 permissions:
