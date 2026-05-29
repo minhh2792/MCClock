@@ -130,7 +130,15 @@ public final class MCClock extends JavaPlugin {
                 for (Entity entity : world.getEntities()) {
                     if (!(entity instanceof ItemFrame frame)) continue;
                     if (frame.isVisible()) continue;
-                    if (frame.getItem().getType() != Material.FILLED_MAP) continue;
+
+                    ItemStack frameItem = frame.getItem();
+                    if(frameItem.getType() != Material.FILLED_MAP) continue;
+                    if(mapId <= 0 || !(frameItem.getItemMeta() instanceof org.bukkit.inventory.meta.MapMeta mapMeta)
+                                  || !mapMeta.hasMapView()
+                                  || mapMeta.getMapView() == null
+                                  || mapMeta.getMapView().getId() != mapId) {
+                        continue;
+                    }
 
                     for (Player player : world.getPlayers()) {
                         if (player.getLocation().distanceSquared(frame.getLocation()) <= radiusSq) {
