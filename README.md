@@ -76,5 +76,3 @@ All commands support **tab completion**.
 | Permission | Description | Default |
 |---|---|---|
 | `mcclock.admin` | Access to all `/mcclock` commands | OP |
-
-
