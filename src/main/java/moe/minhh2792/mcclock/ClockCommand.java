@@ -2,19 +2,14 @@ package moe.minhh2792.mcclock;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapView;
-import org.bukkit.util.RayTraceResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -46,7 +41,6 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase()) {
             case "get" -> handleGet(sender, args);
             case "getframe" -> handleGetFrame(sender, args);
-            case "place" -> handlePlace(sender);
             case "reload" -> handleReload(sender);
             default -> sendHelp(sender);
         }
@@ -90,50 +84,6 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
 
         player.getInventory().addItem(plugin.createInvisibleFrameItem(amount));
         player.sendMessage(ChatColor.GREEN + "Given " + amount + " invisible item frame(s). Place it like a normal frame!");
-    }
-
-    private void handlePlace(CommandSender sender) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("Only players can use /mcclock place.");
-            return;
-        }
-
-        RayTraceResult result = player.rayTraceBlocks(5);
-        if (result == null || result.getHitBlock() == null || result.getHitBlockFace() == null) {
-            sender.sendMessage(ChatColor.RED + "No block in range. Look at a block within 5 blocks.");
-            return;
-        }
-
-        Block hitBlock = result.getHitBlock();
-        BlockFace face = result.getHitBlockFace();
-
-        Block frameBlock = hitBlock.getRelative(face);
-        if (frameBlock.getType() != Material.AIR) {
-            sender.sendMessage(ChatColor.RED + "Not enough space to place the clock there.");
-            return;
-        }
-
-        MapView view = plugin.getOrCreateMapView();
-        if (view == null) {
-            sender.sendMessage(ChatColor.RED + "Failed to create map — no worlds loaded.");
-            return;
-        }
-
-        ItemStack mapItem = buildClockMapItem(view);
-        if (mapItem == null) {
-            sender.sendMessage(ChatColor.RED + "Failed to create clock map item.");
-            return;
-        }
-
-        ItemFrame frame = (ItemFrame) player.getWorld().spawnEntity(
-                frameBlock.getLocation(), EntityType.ITEM_FRAME);
-        frame.setFacingDirection(face, true);
-        frame.setVisible(false);
-        frame.setFixed(false);
-        frame.setItem(mapItem);
-        plugin.markOwnedFrame(frame);
-
-        sender.sendMessage(ChatColor.GREEN + "Clock placed! (Map ID: " + view.getId() + ")");
     }
 
     private Integer parseAmount(CommandSender sender, String[] args) {
@@ -184,7 +134,7 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
         if (!sender.hasPermission("mcclock.admin")) return Collections.emptyList();
 
         if (args.length == 1) {
-            List<String> subs = Arrays.asList("get", "getframe", "place", "reload");
+            List<String> subs = Arrays.asList("get", "getframe", "reload");
             return subs.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
@@ -213,7 +163,6 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.AQUA + "--- MCClock ---");
         sender.sendMessage(ChatColor.YELLOW + "/mcclock get [amount]" + ChatColor.WHITE + " — Get clock map(s)");
         sender.sendMessage(ChatColor.YELLOW + "/mcclock getframe [amount]" + ChatColor.WHITE + " — Get invisible item frame(s)");
-        sender.sendMessage(ChatColor.YELLOW + "/mcclock place" + ChatColor.WHITE + " — Place clock directly on the block you're looking at");
         sender.sendMessage(ChatColor.YELLOW + "/mcclock reload" + ChatColor.WHITE + " — Reload config and map");
     }
 }
