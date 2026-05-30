@@ -16,11 +16,11 @@ hands:
 
   # smooth: second hand moves continuously between ticks
   # tick: second hand jumps once per second
-  mode: smooth
+  mode: tick
 
   # Compensation in milliseconds for network latency (try 500-1000 if clock appears behind)
   # Example: 1000 = 1 second
-  latency-compensation-ms: 0
+  latency-compensation-ms: 500
 
 tick-sound:
   # Play a tick sound near invisible item frames that contain the clock map
