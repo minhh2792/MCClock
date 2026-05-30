@@ -40,7 +40,7 @@ public class InvisibleFrameListener implements Listener {
         Location loc = frame.getLocation();
 
         ItemStack contents = frame.getItem();
-        if (contents != null && contents.getType() != Material.AIR) {
+        if (contents.getType() != Material.AIR) {
             frame.getWorld().dropItemNaturally(loc, contents);
         }
 

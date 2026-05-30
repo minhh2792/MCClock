@@ -3,7 +3,7 @@
 ---
 # MCClock
 
-A Minecraft plugin that renders an analog clock onto a map item, showing the real-world time in a configurable timezone. Supports invisible item frames, tick sounds, and one-command clock placement.
+A Minecraft plugin that renders an analog clock onto a map item, showing the real-world time in a configurable timezone. Supports invisible item frames, tick sounds.
 
 ## Requirements
 
@@ -15,7 +15,7 @@ A Minecraft plugin that renders an analog clock onto a map item, showing the rea
 1. Drop the `.jar` into your `plugins/` folder.
 2. Restart the server.
 3. Edit `plugins/MCClock/config.yml` as needed.
-4. Run `/mcclock place` to place a clock instantly, or use `/mcclock get` + `/mcclock getframe` separately.
+4. Use `/mcclock get` + `/mcclock getframe` separately.
 
 ## Configuration
 
@@ -57,7 +57,7 @@ tick-sound:
   sound: "BLOCK_NOTE_BLOCK_HAT"
 ```
 
-You can replace `plugins/MCClock/clock_face.png` with a custom image to change the clock face. The image will be scaled to 128×128 and applied on the next `/mcclock reload`.
+You can replace `plugins/MCClock/clock_face.png` with a custom 128x128 image to change the clock face. The image will be scaled to 128×128 if larger and applied on the next `/mcclock reload`.
 
 ## Commands
 

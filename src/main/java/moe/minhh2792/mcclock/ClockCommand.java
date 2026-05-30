@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapView;
 import org.bukkit.util.RayTraceResult;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +32,7 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("mcclock.admin")) {
             sender.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
             return true;
@@ -58,19 +59,8 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        int amount = 1;
-        if (args.length >= 2) {
-            try {
-                amount = Integer.parseInt(args[1]);
-                if (amount < 1 || amount > 64) {
-                    sender.sendMessage(ChatColor.RED + "Amount must be between 1 and 64.");
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                sender.sendMessage(ChatColor.RED + "Invalid amount: " + args[1]);
-                return;
-            }
-        }
+        Integer amount = parseAmount(sender, args);
+        if (amount == null) return;
 
         MapView view = plugin.getOrCreateMapView();
         if (view == null) {
@@ -78,7 +68,7 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        ItemStack item = buildClockMapItem(view, 1);
+        ItemStack item = buildClockMapItem(view);
         if (item == null) {
             sender.sendMessage(ChatColor.RED + "Failed to create map item.");
             return;
@@ -95,19 +85,8 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        int amount = 1;
-        if (args.length >= 2) {
-            try {
-                amount = Integer.parseInt(args[1]);
-                if (amount < 1 || amount > 64) {
-                    sender.sendMessage(ChatColor.RED + "Amount must be between 1 and 64.");
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                sender.sendMessage(ChatColor.RED + "Invalid amount: " + args[1]);
-                return;
-            }
-        }
+        Integer amount = parseAmount(sender, args);
+        if (amount == null) return;
 
         player.getInventory().addItem(plugin.createInvisibleFrameItem(amount));
         player.sendMessage(ChatColor.GREEN + "Given " + amount + " invisible item frame(s). Place it like a normal frame!");
@@ -140,7 +119,7 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        ItemStack mapItem = buildClockMapItem(view, 1);
+        ItemStack mapItem = buildClockMapItem(view);
         if (mapItem == null) {
             sender.sendMessage(ChatColor.RED + "Failed to create clock map item.");
             return;
@@ -157,6 +136,23 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GREEN + "Clock placed! (Map ID: " + view.getId() + ")");
     }
 
+    private Integer parseAmount(CommandSender sender, String[] args) {
+        int amount = 1;
+        if (args.length >= 2) {
+            try {
+                amount = Integer.parseInt(args[1]);
+                if (amount < 1 || amount > 64) {
+                    sender.sendMessage(ChatColor.RED + "Amount must be between 1 and 64.");
+                    return null;
+                }
+            } catch (NumberFormatException e) {
+                sender.sendMessage(ChatColor.RED + "Invalid amount: " + args[1]);
+                return null;
+            }
+        }
+        return amount;
+    }
+
     private void handleReload(CommandSender sender) {
         boolean success = plugin.reloadPlugin();
         if (success) {
@@ -166,14 +162,14 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private ItemStack buildClockMapItem(MapView view, int amount) {
+    private ItemStack buildClockMapItem(MapView view) {
         String name = ChatColor.translateAlternateColorCodes('&',
                 plugin.getConfig().getString("item.name", "&bMCClock"));
         List<String> lore = plugin.getConfig().getStringList("item.lore").stream()
                 .map(line -> ChatColor.translateAlternateColorCodes('&', line))
                 .collect(Collectors.toList());
 
-        ItemStack item = new ItemStack(Material.FILLED_MAP, amount);
+        ItemStack item = new ItemStack(Material.FILLED_MAP, 1);
         MapMeta meta = (MapMeta) item.getItemMeta();
         if (meta == null) return null;
         meta.setMapView(view);
@@ -184,7 +180,7 @@ public class ClockCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("mcclock.admin")) return Collections.emptyList();
 
         if (args.length == 1) {
