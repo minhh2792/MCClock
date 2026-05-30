@@ -17,7 +17,7 @@ public class ClockRenderer extends MapRenderer {
     private final BufferedImage scaledFace;
     private final int thickness;
     private final boolean smoothMode;
-    private volatile ZoneId zoneId;
+    private final ZoneId zoneId;
     private final long compensationNanos;
 
     private final byte handColor;
@@ -55,35 +55,35 @@ public class ClockRenderer extends MapRenderer {
         double rad = Math.toRadians(angleDeg - 90);
         int x1 = 64 + (int) Math.round(length * Math.cos(rad));
         int y1 = 64 + (int) Math.round(length * Math.sin(rad));
-        drawLine(canvas, 64, 64, x1, y1, color);
+        drawLine(canvas, x1, y1, color);
     }
 
-    private void drawLine(MapCanvas canvas, int x0, int y0, int x1, int y1, byte color) {
-        double dx = x1 - x0, dy = y1 - y0;
+    private void drawLine(MapCanvas canvas, int x1, int y1, byte color) {
+        double dx = x1 - 64, dy = y1 - 64;
         double len = Math.sqrt(dx * dx + dy * dy);
         double half = (thickness - 1) / 2.0;
 
-        int minX = Math.max(0, Math.min(x0, x1) - thickness);
-        int maxX = Math.min(127, Math.max(x0, x1) + thickness);
-        int minY = Math.max(0, Math.min(y0, y1) - thickness);
-        int maxY = Math.min(127, Math.max(y0, y1) + thickness);
+        int minX = Math.max(0, Math.min(64, x1) - thickness);
+        int maxX = Math.min(127, Math.max(64, x1) + thickness);
+        int minY = Math.max(0, Math.min(64, y1) - thickness);
+        int maxY = Math.min(127, Math.max(64, y1) + thickness);
 
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 double dist;
                 if (len == 0) {
-                    double ex = x - x0, ey = y - y0;
+                    double ex = x - 64, ey = y - 64;
                     dist = Math.sqrt(ex * ex + ey * ey);
                 } else {
-                    double t = ((x - x0) * dx + (y - y0) * dy) / (len * len);
+                    double t = ((x - 64) * dx + (y - 64) * dy) / (len * len);
                     if (t < 0) {
-                        double ex = x - x0, ey = y - y0;
+                        double ex = x - 64, ey = y - 64;
                         dist = Math.sqrt(ex * ex + ey * ey);
                     } else if (t > 1) {
                         double ex = x - x1, ey = y - y1;
                         dist = Math.sqrt(ex * ex + ey * ey);
                     } else {
-                        dist = Math.abs(dy * x - dx * y + (double) x1 * y0 - (double) y1 * x0) / len;
+                        dist = Math.abs(dy * x - dx * y + (double) x1 * 64 - (double) y1 * 64) / len;
                     }
                 }
                 if (dist <= half + 0.5) canvas.setPixel(x, y, color);

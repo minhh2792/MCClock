@@ -5,16 +5,20 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapView;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("deprecation")
-public class ClockCommand implements CommandExecutor {
+public class ClockCommand implements CommandExecutor, TabCompleter {
 
     private final MCClock plugin;
 
@@ -23,7 +27,7 @@ public class ClockCommand implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("mcclock.admin")) {
             sender.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
             return true;
@@ -36,6 +40,7 @@ public class ClockCommand implements CommandExecutor {
 
         switch (args[0].toLowerCase()) {
             case "get" -> handleGet(sender, args);
+            case "getframe" -> handleGetFrame(sender, args);
             case "reload" -> handleReload(sender);
             default -> sendHelp(sender);
         }
@@ -48,19 +53,8 @@ public class ClockCommand implements CommandExecutor {
             return;
         }
 
-        int amount = 1;
-        if (args.length >= 2) {
-            try {
-                amount = Integer.parseInt(args[1]);
-                if (amount < 1 || amount > 64) {
-                    sender.sendMessage(ChatColor.RED + "Amount must be between 1 and 64.");
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                sender.sendMessage(ChatColor.RED + "Invalid amount: " + args[1]);
-                return;
-            }
-        }
+        Integer amount = parseAmount(sender, args);
+        if (amount == null) return;
 
         MapView view = plugin.getOrCreateMapView();
         if (view == null) {
@@ -68,25 +62,45 @@ public class ClockCommand implements CommandExecutor {
             return;
         }
 
-        String name = ChatColor.translateAlternateColorCodes('&',
-                plugin.getConfig().getString("item.name", "&bMCClock"));
-        List<String> lore = plugin.getConfig().getStringList("item.lore").stream()
-                .map(line -> ChatColor.translateAlternateColorCodes('&', line))
-                .collect(Collectors.toList());
-
-        ItemStack item = new ItemStack(Material.FILLED_MAP, amount);
-        MapMeta meta = (MapMeta) item.getItemMeta();
-        if (meta == null) {
+        ItemStack item = buildClockMapItem(view);
+        if (item == null) {
             sender.sendMessage(ChatColor.RED + "Failed to create map item.");
             return;
         }
-        meta.setMapView(view);
-        meta.setDisplayName(name);
-        if (!lore.isEmpty()) meta.setLore(lore);
-        item.setItemMeta(meta);
+        item.setAmount(amount);
 
         player.getInventory().addItem(item);
         player.sendMessage(ChatColor.GREEN + "Given " + amount + " clock map(s) - (Map ID: " + view.getId() + ")");
+    }
+
+    private void handleGetFrame(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("Only players can use /mcclock getframe.");
+            return;
+        }
+
+        Integer amount = parseAmount(sender, args);
+        if (amount == null) return;
+
+        player.getInventory().addItem(plugin.createInvisibleFrameItem(amount));
+        player.sendMessage(ChatColor.GREEN + "Given " + amount + " invisible item frame(s). Place it like a normal frame!");
+    }
+
+    private Integer parseAmount(CommandSender sender, String[] args) {
+        int amount = 1;
+        if (args.length >= 2) {
+            try {
+                amount = Integer.parseInt(args[1]);
+                if (amount < 1 || amount > 64) {
+                    sender.sendMessage(ChatColor.RED + "Amount must be between 1 and 64.");
+                    return null;
+                }
+            } catch (NumberFormatException e) {
+                sender.sendMessage(ChatColor.RED + "Invalid amount: " + args[1]);
+                return null;
+            }
+        }
+        return amount;
     }
 
     private void handleReload(CommandSender sender) {
@@ -98,9 +112,57 @@ public class ClockCommand implements CommandExecutor {
         }
     }
 
+    private ItemStack buildClockMapItem(MapView view) {
+        String name = ChatColor.translateAlternateColorCodes('&',
+                plugin.getConfig().getString("item.name", "&bMCClock"));
+        List<String> lore = plugin.getConfig().getStringList("item.lore").stream()
+                .map(line -> ChatColor.translateAlternateColorCodes('&', line))
+                .collect(Collectors.toList());
+
+        ItemStack item = new ItemStack(Material.FILLED_MAP, 1);
+        MapMeta meta = (MapMeta) item.getItemMeta();
+        if (meta == null) return null;
+        meta.setMapView(view);
+        meta.setDisplayName(name);
+        if (!lore.isEmpty()) meta.setLore(lore);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+        if (!sender.hasPermission("mcclock.admin")) return Collections.emptyList();
+
+        if (args.length == 1) {
+            List<String> subs = Arrays.asList("get", "getframe", "reload");
+            return subs.stream()
+                    .filter(s -> s.startsWith(args[0].toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        List<String> amounts = Arrays.asList("1", "2", "4", "8", "16", "32", "64");
+
+        if (args.length == 2) {
+            String sub = args[0].toLowerCase();
+            if (sub.equals("get")) {
+                return amounts.stream()
+                        .filter(s -> s.startsWith(args[1]))
+                        .collect(Collectors.toList());
+            }
+            if (sub.equals("getframe")) {
+                return amounts.stream()
+                        .filter(s -> s.startsWith(args[1]))
+                        .collect(Collectors.toList());
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(ChatColor.AQUA + "--- MCClock ---");
         sender.sendMessage(ChatColor.YELLOW + "/mcclock get [amount]" + ChatColor.WHITE + " — Get clock map(s)");
+        sender.sendMessage(ChatColor.YELLOW + "/mcclock getframe [amount]" + ChatColor.WHITE + " — Get invisible item frame(s)");
         sender.sendMessage(ChatColor.YELLOW + "/mcclock reload" + ChatColor.WHITE + " — Reload config and map");
     }
 }
